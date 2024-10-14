@@ -1,0 +1,16 @@
+spring:
+  application.name: productService
+
+server.port: 7001
+
+logging:
+  level:
+    root: INFO
+    ber.com: DEBUG		
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+server.port: 8080
