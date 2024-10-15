@@ -17,8 +17,65 @@ logging:
     root: INFO
     ber.com: DEBUG		
 
+springdoc:
+  swagger-ui.path: /openapi/swagger-ui.html
+  api-docs.path: /aopenapi/v3/api-docs
+  packagesToScan: ber.com
+  PathsToMatch: /**
+
+api:
+ common:
+  version: 1.0.0
+  title: Product composite API
+  description:  simple product composite API
+  termsOfService: terms
+
+  license: licence
+  licenseUrl: license url 
+
+  externalDocDesc: Doc desc
+  externalDocUrl: Doc desc url
+
+  contact:
+    name: BER
+    url: url
+    email: contact@ber.com
+
+ responseCodes:
+  ok.description: OK
+  badRequest.description: Bad Request, invalid format of the request
+  notFound.description: Notfound, the specified id does not exist
+  unprocessableEntity.description: unprecessable entity, input parameters caused the precessing to fail
+
+ product-composite:
+  get-composite-product:
+   description: Returns a composite view of the specified product id
+   notes: |
+     # Normal reponse
+     if the requested product id is found the method will return information regarding:
+     1. product infomations
+     2. Reviews
+     3. Service addresses \n (technical information regarding the addresses of the microservices)
+
+     # Expected partial and error responses
+
+     ## Product id 213
+     200 - OK, but no reviews will be returned 
+
+     ## Non numerical product id
+     400 - A **Bad Request** error will be returned 
+
+     ## Product id 13
+     404 - A **Not Found** error will be returned 
+
+     ## Negative product ids
+     422 - An **Unprocessable Entity** error will be returned 
+
+  server.port: 7000
+  server.error.include-message: always 
+
 ---
-sspring:
+spring:
   config:
     activate:
       on-profile: docker
