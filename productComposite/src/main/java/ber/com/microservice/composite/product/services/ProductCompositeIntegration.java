@@ -1,6 +1,7 @@
 package ber.com.microservice.composite.product.services;
 
 import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,7 +63,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 				.append(reviewServiceHost)
 				.append(":")
 				.append(reviewServicePort)
-				.append("/review?productId=")
+				.append("/review")
 				.toString();
 	}
 	
@@ -79,19 +80,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 			return product;
 			
 		}catch (HttpClientErrorException err) {
-			switch (HttpStatus.resolve(err.getStatusCode().value())) {
-			case NOT_FOUND: {
-				
-				throw new NotFoundException(getErrorMessage(err));
-			}
-			case UNPROCESSABLE_ENTITY: {
-				throw new InvalidInputException(getErrorMessage(err));
-			}
-			default:
-				LOG.warn("Got an unxpected HTTP erro: {}, will rethrow it", err.getStatusCode());
-				LOG.warn("Error body: {}", err.getResponseBodyAsString());
-				throw err;
-			}
+			throw handleHttpClientException(err);
 		}
 	}
 	
@@ -99,7 +88,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 	@Override
 	public List<Review> getReviews(int productId) {
 		try {
-			String url = reviewServiceUrl + productId;
+			String url = reviewServiceUrl+"?productId=" + productId;
 			
 			LOG.debug("will call getReviews API on url: {}", url);
 			
@@ -119,7 +108,85 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 			
 		}
 	}
+
+	@Override
+	public Review create(Review body){
+		try {
+			String url = reviewServiceUrl;
+			LOG.debug("Will post a new review to URL: {}", url);
+			
+			Review review = restTemplate.postForObject(url, body, Review.class);
+			LOG.debug("Created a review with id: {}", review.getProductId());
+			
+			return review;
+		}catch(HttpClientErrorException ex) {
+			throw handleHttpClientException(ex);
+			
+		}
+	}
+
+	@Override
+	public void deleteReviews(int productId) {
+		
+		try {
+			String url = reviewServiceUrl +"?productId="+productId;
+			LOG.debug("Will call the deleteReviews API on url: {}", url);
+			
+			restTemplate.delete(url);
+		}catch(HttpClientErrorException ex) {
+			throw handleHttpClientException(ex);
+		}
+		
+	}
+
+	@Override
+	public Product create(Product product) {
+		try {
+			String url = productServiceUrl;
+			LOG.debug("will post a new product to URL: {}", url);
+			
+			Product prod = restTemplate.postForObject(url, product, Product.class);
+			LOG.debug("Created a product with id: {}", prod.getProductId());
+			
+			return prod;
+			
+		}catch(HttpClientErrorException ex) {
+			throw handleHttpClientException(ex);
+		}
+	}
+
+	@Override
+	public void delete(int productId){
+		try {
+				String url = productServiceUrl+"/"+productId;
+				LOG.debug("Will call the deleteProduct API on URL: {}", url);
+				
+				restTemplate.delete(url);
+		}catch(HttpClientErrorException ex) {
+			throw handleHttpClientException(ex);
+		}
+		
+	}
 	
+	
+	private RuntimeException handleHttpClientException(HttpClientErrorException ex) {
+		
+		HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+		if( status == null) {
+			return new RuntimeException("Error arrived");
+		}
+		switch(status) {
+		case NOT_FOUND:
+				return new NotFoundException(getErrorMessage(ex));
+		case UNPROCESSABLE_ENTITY:
+				return new InvalidInputException(getErrorMessage(ex));
+		default:
+				LOG.warn("Got an unexpected HTTP error: {}, will rethrow it", ex.getStatusCode());
+				LOG.warn("Error body: {}", ex.getResponseBodyAsString());
+				return ex;
+		}
+		
+	}
 	
 	private String getErrorMessage(HttpClientErrorException err) {
 		try {

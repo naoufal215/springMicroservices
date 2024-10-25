@@ -1,16 +1,31 @@
 spring:
   application.name: productService
+  data:
+    mongodb:
+      auto-index-creation: true
+      host: localhost
+      port: 27017
+      database: product-db
 
 server.port: 7001
 
+server:
+  error:
+    include-message: always
 logging:
   level:
     root: INFO
     ber.com: DEBUG		
+    org.springframework.data.mongodb.core: DEBUG
 
 ---
 spring:
   config:
     activate:
       on-profile: docker
+
+  data:
+    mongodb:
+      host: mongodb
+
 server.port: 8080

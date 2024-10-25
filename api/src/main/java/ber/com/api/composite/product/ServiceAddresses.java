@@ -2,13 +2,13 @@ package ber.com.api.composite.product;
 
 public class ServiceAddresses {
 	
-	private final String composite;
-	private final String product;
-	private final String review;
-	
-	
-	
-	
+	private  String composite;
+	private  String product;
+	private  String review;
+
+
+
+
 	public ServiceAddresses() {
 		this.composite = null;
 		this.product = null;
@@ -48,8 +48,31 @@ public class ServiceAddresses {
 	
 	
 	
-	
-	
+	public void setComposite(String composite) {
+		this.composite = composite;
+	}
+
+
+
+
+	public void setProduct(String product) {
+		this.product = product;
+	}
+
+
+
+
+	public void setReview(String review) {
+		this.review = review;
+	}
+
+
+
+
+	@Override
+	public String toString() {
+		return "ServiceAddresses [composite=" + composite + ", product=" + product + ", review=" + review + "]";
+	}
 	
 
 }

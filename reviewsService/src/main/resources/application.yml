@@ -1,16 +1,31 @@
 spring.application.name: reviewsService
-
+server:
+  error:
+    include-message: always
 server.port: 7003
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: jdbc:/mysql://localhost/review-db
+    username: user
+    password: pwd
+    hikari:
+      initialization-fail-timeout: 60000
 
 logging:
   level:
     root: INFO
     ber.com: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 ---
 spring:
   config:
     activate:
       on-profile: docker
+  datasource:
+   url: jdbc:mysql://mysql/review-db
 
 server.port: 8080

@@ -77,6 +77,34 @@ function waitForService(){
 	echo "Done, continues..."
 }
 
+function recreateComposite(){
+	local productId=$1
+	local composite=$2
+	
+	assertCurl 200 "curl -X DELETE http://$HOST:$PORT/product-composite/${productId} -s"
+	curl -X POST http://$HOST:$PORT/product-composite -H "Content-Type: application/json" --data "$composite"
+}
+
+function setupTestdata(){
+
+    body="{\"productId\": $PROD_ID_REVS, \"name\": \"name1\", \"weight\": 200, \"reviews\": [ 
+       {\"reviewId\": 1, \"author\": \"author 1\", \"subject\": \"subject 1\", \"content\": \"content 1\"}, 
+       {\"reviewId\": 2, \"author\": \"author 2\", \"subject\": \"subject 2\", \"content\": \"content 2\"}, 
+       {\"reviewId\": 3, \"author\": \"author 3\", \"subject\": \"subject 3\", \"content\": \"content 3\"}, 
+       {\"reviewId\": 4, \"author\": \"author 4\", \"subject\": \"subject 4\", \"content\": \"content 4\"} 
+     ], 
+     \"serviceAdresses\": {} 
+    }"
+    
+    recreateComposite "$PROD_ID_REVS" "$body"
+
+    body="{\"productId\": $PROD_ID_NO_REVS, \"name\": \"name1\", \"weight\": 200, \"reviews\": [], \"serviceAdresses\": {} }"
+
+    recreateComposite "$PROD_ID_NO_REVS" "$body"
+}
+
+
+
 set -e
 
 echo "HOST=${HOST}"
@@ -91,7 +119,8 @@ then
 	docker compose up -d
 fi
 
-waitForService curl http://$HOST:$PORT/product-composite/$PROD_ID_REVS
+waitForService curl -X DELETE http://$HOST:$PORT/product-composite/$PROD_ID_NOT_FOUND
+setupTestdata
 echo -e "\n"
 
 
@@ -123,7 +152,7 @@ echo -e "\n"
 
 echo "Start of test: get product using string as productId"
 assertCurl 400 "curl http://$HOST:$PORT/product-composite/invalidProductId -s" "response status"
-assertEqual null "$(echo $RESPONSE | jq -r .message)" "response content"
+assertEqual "Type mismatch." "$(echo $RESPONSE | jq -r .message)" "response content"
 echo "End of test: get product using string as productId" 
 echo -e "\n"
 
