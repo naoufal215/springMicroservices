@@ -58,6 +58,52 @@ function testUrl(){
 	fi;
 }
 
+function testCompositeCreated(){
+	
+	if ! assertCurl 200 "curl http://$HOST:$PORT/product-composite/$PROD_ID_REVS -s"
+	then 
+		echo -n "FAIL"
+		return 1
+	fi
+	
+	set +e 
+	assertEqual "$PROD_ID_REVS" $(echo $RESPONSE | jq .productId)
+	if [ "$?" -eq "1" ] ; then return 1; fi
+	
+	assertEqual 4 $(echo $RESPONSE | jq ".reviews | length")
+	if [ "$?" -eq "1" ] ; then return 1; fi
+	
+	set -e
+}
+
+function waitForMessageProcessing(){
+	echo "Wait for messages to be proccessed... "
+	sleep 1
+	
+	n=0
+	until testCompositeCreated
+	do
+		n=$((n + 1))
+		if [[ $n == 40 ]]
+		then
+			echo " Give up"
+			exit 1
+		else
+			sleep 6
+			echo -n ", retry #$n "
+		fi
+	done
+	echo "All messages are new processed!"
+}
+
+function recreateComposite() {
+	local productId=$1
+	local composite=$2
+	
+	assertCurl 202 "curl -X DELETE http://$HOST:$PORT/product-composite/${productId} -s"
+	asserCurl 202 $(curl -X POST -s http://$HOST:$PORT/product-composite -H "Content-Type: application/json" --data "$composite" -w "%{http_code}" )
+}
+
 function waitForService(){
 	url=$@
 	echo -n "wait for: $url..."
@@ -119,8 +165,13 @@ then
 	docker compose up -d
 fi
 
-waitForService curl -X DELETE http://$HOST:$PORT/product-composite/$PROD_ID_NOT_FOUND
+waitForService curl http://$HOST:$PORT/actuator/health
+
 setupTestdata
+
+waitForMessageProcessing
+
+
 echo -e "\n"
 
 
@@ -154,6 +205,17 @@ echo "Start of test: get product using string as productId"
 assertCurl 400 "curl http://$HOST:$PORT/product-composite/invalidProductId -s" "response status"
 assertEqual "Type mismatch." "$(echo $RESPONSE | jq -r .message)" "response content"
 echo "End of test: get product using string as productId" 
+
+echo "Swagger/OpenAPI tests"
+assertCurl 302 "curl -s http://$HOST:$PORT/openapi/swagger-ui.html"
+assertCurl 200 "curl -sL http://$HOST:$PORT/openapi/swagger-ui.html"
+assertCurl 200 "curl -s http://$HOST:$PORT/openapi/webjars/swagger-ui/index.html?configUrl=/V3/api-docs/swagger-config"
+assertCurl 200 "curl -s http://$HOST:$PORT/openapi/v3/api-docs"
+assertEqual "3.0.1" "$(echo $RESPONSE | jq -r .openapi)"
+assertEqual "http://$HOST:$PORT" "$(echo $RESPONSE | jq -r '.servers[0].url')"
+assertCurl 200 "curl -s http://$HOST:$PORT/openapi/v3/api-docs.yaml"
+
+
 echo -e "\n"
 
 if [[ $@ == *"stop"* ]]

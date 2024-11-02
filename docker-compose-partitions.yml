@@ -4,31 +4,54 @@ version: '2.1'
 services:
  product:
   build: productService
-  mem_limit: 512m
+  mem_limit: 256m
   environment:
-   - SPRING_PROFILES_ACTIVE=docker
+   - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned,streaming_instance_0
   depends_on:
     mongodb:
-     condition: service_healthy   
+     condition: service_healthy
     rabbitmq:
      condition: service_healthy  
+ product-p1:
+  build: productService
+  mem_limit: 256m
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned,streaming_instance_1
+  depends_on:
+   mongodb:
+    condition: service_healthy
+   rabbitmq:
+    condition: service_healthy    
+
+
 
  review:
   build: reviewsService
-  mem_limit: 512m
+  mem_limit: 256m
   environment:
-   - SPRING_PROFILES_ACTIVE=docker
+   - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned,streaming_instance_0
   depends_on:
    mysql:
     condition: service_healthy
-   rabbitmq: 
-    condition: service_healthy 
+   rabbitmq:
+    condition: service_healthy
+ review-p1:
+  build: reviewsService
+  mem_limit: 256m
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned,streaming_instance_1
+  depends_on:
+   mysql:
+    condition: service_healthy
+   rabbitmq:
+    condition: service_healthy
+
 
  product-composite:
   build: productComposite
-  mem_limit: 512m
+  mem_limit: 256m
   environment:
-   - SPRING_PROFILES_ACTIVE=docker
+   - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned
   ports:
    - "8080:8080"
   depends_on:

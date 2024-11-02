@@ -1,6 +1,8 @@
 package ber.com.microservice.composite.product.services;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ import ber.com.api.core.product.Product;
 import ber.com.api.core.review.Review;
 import ber.com.api.exceptions.NotFoundException;
 import ber.com.util.http.ServiceUtil;
+import reactor.core.publisher.Mono;
 
 @RestController
 public class ProductCompositeServiceImpl  implements ProductCompositeService{
@@ -40,21 +43,17 @@ public class ProductCompositeServiceImpl  implements ProductCompositeService{
 
 
 	@Override
-	public ProductAggregate getProduct(int productId) {
+	public Mono<ProductAggregate> getProduct(int productId) {
 		
 		LOG.debug("getProduct: lookup a product aggregate for productId: {}", productId);
 		
-		Product product = integration.getProduct(productId);
+		return Mono.zip(
+				values -> createProductAggregate((Product)values[0],(List<Review>) values[1], serviceUtil.getServiceAddress()),
+				integration.getProduct(productId),
+				integration.getReviews(productId).collectList())
+				.doOnError(ex -> LOG.warn("getCompositeProduct failed: {}", ex.toString()))
+				.log(LOG.getName(), Level.FINE);
 		
-		if(product == null ) {
-			throw new NotFoundException("No product found for productID: "+productId);
-		}
-		
-		List<Review> reviews = integration.getReviews(productId);
-		
-		LOG.debug("getProduct: aggregate entity found for productId: {}", productId);
-		
-		return createProductAggregate(product, reviews, serviceUtil.getServiceAddress());
 		
 	}
 
@@ -63,26 +62,32 @@ public class ProductCompositeServiceImpl  implements ProductCompositeService{
 
 
 	@Override
-	public void createProduct(ProductAggregate body) {
+	public Mono<Void> createProduct(ProductAggregate body) {
 		try {
-			LOG.debug("createCompositeProduct: creates a new composite entity for product: {}", body);
+			List<Mono> monoList = new ArrayList<>();
+			
+			LOG.info("Will create a new composite entity for product.id: {}", body.getProductId());
 			
 			Product product = new Product(body.getProductId(), body.getName(), body.getWeight(), null);
 			
-			integration.create(product);
+			monoList.add(integration.create(product));
 			
 			if(body.getReviews() != null) {
-				body.getReviews().forEach(r ->{
-					Review review = new Review(body.getProductId(), r.getReviewId(), r.getAuthor(), r.getSubject(), r.getContent(), null);
-					try {
-						integration.create(review);
-					} catch (Exception e) {
-						LOG.warn("createCOmpositeProduct failed to create review", e);
-					}
+				body.getReviews().forEach(review ->{
+					Review reviewApi = new Review(body.getProductId(), review.getReviewId(), 
+							review.getAuthor(), review.getSubject(), review.getContent(), null);
+					monoList.add(integration.create(reviewApi));
 				});
 			}
 			
-			LOG.debug("createCompositeProduct: composite entities created for the productID : {}", body.getProductId());
+			LOG.debug("createCompositeProduct: composite entities created for productId: {}",
+					body.getProductId());
+			
+			return Mono.zip(element -> "", monoList.toArray(new Mono[0]))
+					.doOnError(ex -> LOG.warn("createCOmpositeProduct failed: {}", body.getProductId()))
+					.then();
+			
+			
 		}catch(RuntimeException ex) {
 			LOG.warn("createCompositeProduct failed", ex);
 			throw ex;
@@ -92,19 +97,25 @@ public class ProductCompositeServiceImpl  implements ProductCompositeService{
 	}
 
 	@Override
-	public void deleteProduct(int productId) {
+	public Mono<Void> deleteProduct(int productId) {
 		LOG.debug("deleteCompositeProduct: Deletes a product aggregate for productId: {}", productId);
 		
 		try {
-			integration.deleteReviews(productId);
-			integration.delete(productId);
+			
+			return Mono.zip(
+					r -> "",
+					integration.delete(productId),
+					integration.deleteReviews(productId)
+					).doOnError(ex -> LOG.warn("delete failed: {}", ex.toString()))
+					.log(LOG.getName(), Level.FINE)
+					.then();
+			
 		} catch (RuntimeException e) {
-			LOG.warn("createCompositeProduct failed", e);
+			LOG.warn("deleteProduct failed", e);
 			throw e;
 		}
 		
 		
-		LOG.debug("deleteCompositeProduct: aggregate entities deleted for productId: {}", productId); 
 		
 	}
 	

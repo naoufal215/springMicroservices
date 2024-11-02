@@ -15,6 +15,7 @@ java {
 
 ext {
 	mapstructVersion = "1.6.2"
+	springCloudVersion = "2022.0.1"
 }
 
 jar {
@@ -23,11 +24,15 @@ jar {
 
 repositories {
 	mavenCentral()
+	
 }
 
 dependencies {
 	implementation project(":api")
 	implementation project(":util")
+	
+	implementation 'org.springframework.cloud:spring-cloud-starter-stream-rabbit'
+	implementation 'org.springframework.cloud:spring-cloud-starter-stream-kafka'
 
 
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -52,6 +57,12 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+	imports{
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
 }
 
 tasks.named('test') {

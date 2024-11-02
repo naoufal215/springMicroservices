@@ -1,17 +1,26 @@
 package ber.com.microservice.composite.product.config;
 
+import org.slf4j.Logger;
+
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 @Component
 public class CustomConfig {
+	
+	private final Logger LOG = LoggerFactory.getLogger(CustomConfig.class);
 
 	@Value("${api.common.version}")
 	String apiVersion;
@@ -45,6 +54,34 @@ public class CustomConfig {
 	
 	@Value("${api.common.contact.email}")
 	String apiContactEmail;
+	
+	private final Integer threadPoolSize;
+	private final Integer taskQueueSize;
+	
+	
+	@Autowired
+	public CustomConfig(
+			@Value("${app.threadPoolSize:10}") Integer threadPoolSize, 
+			@Value("${app.taskQueueSize:100}") Integer taskQueueSize) {
+		super();
+		this.threadPoolSize = threadPoolSize;
+		this.taskQueueSize = taskQueueSize;
+	}
+	
+	@Bean
+	public Scheduler publishEventScheduler() {
+		LOG.info("Creates a messageinScheduler with connectionPoolSize = {}", threadPoolSize);
+		
+		return Schedulers.newBoundedElastic(threadPoolSize, taskQueueSize, "composite-prod-publish-pool");
+	}
+	
+	
+	
+	
+	@Bean
+	RestTemplate restTemplate() {
+		return new RestTemplate();
+	}
 	
 	
 	

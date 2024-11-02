@@ -2,9 +2,12 @@ package ber.com;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.function.Consumer;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -13,11 +16,16 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import ber.com.api.core.review.Review;
+import ber.com.api.event.Event;
+import ber.com.api.event.Event.Type;
 import ber.com.microservice.core.review.persistence.ReviewRepository;
-import reactor.core.publisher.Mono;
 
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+properties = {"spring.cloud.stram.defaultBinder=rabbit",
+			  "logging.level.ber.com=DEBUG"
+			 }
+)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class ReviewsServiceApplicationTests extends MySQLTestBase {
 	
@@ -27,6 +35,10 @@ class ReviewsServiceApplicationTests extends MySQLTestBase {
 	
 	@Autowired
 	private ReviewRepository repository;
+	
+	@Autowired
+	@Qualifier("messageProcessor")
+	private Consumer<Event<Integer, Review>> messageProcessor;
 	
 	
 	@BeforeEach
@@ -41,9 +53,9 @@ class ReviewsServiceApplicationTests extends MySQLTestBase {
 		
 		assertEquals(0, repository.findByProductId(productId).size());
 		
-		postAndVerifyReview(productId, 1, HttpStatus.OK);
-		postAndVerifyReview(productId, 2, HttpStatus.OK);
-		postAndVerifyReview(productId, 3, HttpStatus.OK);
+		sendCreateReviewEvent(productId, 1);
+		sendCreateReviewEvent(productId, 2);
+		sendCreateReviewEvent(productId, 3);
 		
 		assertEquals(3, repository.findByProductId(1).size());
 		
@@ -97,14 +109,14 @@ class ReviewsServiceApplicationTests extends MySQLTestBase {
 		int productId =1;
 		int reviewId =1;
 		
-		postAndVerifyReview(productId, reviewId, HttpStatus.OK);
+		sendCreateReviewEvent(productId, reviewId);
 		
 		assertEquals(1, repository.findByProductId(productId).size());
 		
-		deleteAndVerifyReviewByProductId(productId, HttpStatus.OK);
+		sendDeleteReviewEvent(productId);
 		assertEquals(0, repository.findByProductId(productId).size());
 		
-		deleteAndVerifyReviewByProductId(productId, HttpStatus.OK);
+		sendDeleteReviewEvent(productId);
 		
 	}
 
@@ -126,27 +138,19 @@ class ReviewsServiceApplicationTests extends MySQLTestBase {
 				.expectBody();
 	}
 	
-	private WebTestClient.BodyContentSpec postAndVerifyReview(int productId, int reviewId, HttpStatus expected){
+	
+	private void sendCreateReviewEvent(int productId, int reviewId) {
+		Review review = new Review(productId, reviewId, "author"+reviewId, "subject"+reviewId,
+				"content"+reviewId, "SA");
+		Event<Integer, Review> event = new Event(Type.CREATE,productId, review);
 		
-		Review review = new Review(productId, reviewId, "Author"+reviewId, "Subject"+reviewId, "Content"+reviewId, "SA");
-		
-		return client.post()
-				.uri("/review")
-				.body(Mono.just(review), Review.class)
-				.accept(MediaType.APPLICATION_JSON)
-				.exchange()
-				.expectStatus().isEqualTo(expected)
-				.expectHeader().contentType(MediaType.APPLICATION_JSON)
-				.expectBody();
+		messageProcessor.accept(event);
 	}
 	
-	private WebTestClient.BodyContentSpec deleteAndVerifyReviewByProductId(int productId, HttpStatus expectedStatus){
-		return client.delete()
-				.uri("/review?productId="+productId)
-				.accept(MediaType.APPLICATION_JSON)
-				.exchange()
-				.expectStatus().isEqualTo(expectedStatus)
-				.expectBody();
+	
+	private void sendDeleteReviewEvent(int productId) {
+		Event<Integer, Review> event = new Event(Type.DELETE, productId, null);
+		messageProcessor.accept(event);
 	}
 
 }
