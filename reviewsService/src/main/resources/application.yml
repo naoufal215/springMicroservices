@@ -14,6 +14,18 @@ spring:
     hikari:
       initialization-fail-timeout: 60000
 
+app.eureka-server: localhost
+eureka:
+ client:
+  serviceUrl:
+   defaultZone: http://${app.eureka-server}:8761/eureka/
+   initialInstanceInfoReplicationIntervalSeconds: 5
+   registryFetchIntervalSeconds: 5
+ instance:
+  leaseRenewalIntervalInSeconds: 5
+  leaseExpirationDurationInSeconds: 5
+  virtual-host-name: ${spring.application.name}
+
 spring.cloud.function.definition: messageProcessor
 
 spring.cloud.stream:
@@ -75,6 +87,7 @@ server.port: 8080
 
 spring.rabbitmq.host: rabbitmq
 spring.cloud.stream.kafka.binder.brokers: kafka
+app.eureka-server: eureka
 
 ---
 spring:

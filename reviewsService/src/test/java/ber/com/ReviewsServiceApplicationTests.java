@@ -23,7 +23,8 @@ import ber.com.microservice.core.review.persistence.ReviewRepository;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
 properties = {"spring.cloud.stram.defaultBinder=rabbit",
-			  "logging.level.ber.com=DEBUG"
+			  "logging.level.ber.com=DEBUG",
+			  "eureka.client.enabled=false"
 			 }
 )
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

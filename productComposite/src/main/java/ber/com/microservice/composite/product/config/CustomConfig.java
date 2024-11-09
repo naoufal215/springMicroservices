@@ -5,9 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -105,6 +107,13 @@ public class CustomConfig {
 								.description(apiExternalDocDesc)
 								.url(apiExternalDocUrl));
 		
+	}
+	
+	
+	@Bean
+	@LoadBalanced
+	public WebClient.Builder loadBalancedWebClientBuilder(){
+		return WebClient.builder();
 	}
 	
 	

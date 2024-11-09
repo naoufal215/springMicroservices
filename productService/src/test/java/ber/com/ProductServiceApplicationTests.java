@@ -25,7 +25,8 @@ import ber.com.api.exceptions.InvalidInputException;
 import ber.com.microservice.core.product.persistence.ProductRepository;
 import reactor.core.publisher.Mono;
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+				properties = {"eureka.client.enabled=false"})
 class ProductServiceApplicationTests  extends MongoDbTestBase{
 	
 	@Autowired

@@ -2,6 +2,7 @@ package ber.com.microservice.composite.product.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 import org.slf4j.Logger;
@@ -28,6 +29,15 @@ public class ProductCompositeServiceImpl  implements ProductCompositeService{
 	private final ServiceUtil serviceUtil;
 	
 	private ProductCompositeIntegration integration;
+	
+	
+	private Function<List<Review>, String> concatAdresses = reviews ->{
+		
+		return reviews.stream()
+				.map(Review::getServiceAddress)
+				.distinct()
+				.reduce("", (add1,add2)->add1+"\n"+add2);
+	};
 	
 	
 	
@@ -131,9 +141,12 @@ public class ProductCompositeServiceImpl  implements ProductCompositeService{
 				.toList();
 		
 		String productAddress = product.getServiceAddress();
-		String reviewAddress = (reviews != null && !reviews.isEmpty()) ? reviews.get(0).getServiceAddress():"";
+		String reviewAddress = (reviews != null && !reviews.isEmpty()) ? concatAdresses.apply(reviews):"";
 		ServiceAddresses serviceAddresses = new ServiceAddresses(serviceAddress, productAddress, reviewAddress);
 		return new ProductAggregate(productId, name, weight, reviewSummaries, serviceAddresses);
 	}
+	
+	
+	
 
 }

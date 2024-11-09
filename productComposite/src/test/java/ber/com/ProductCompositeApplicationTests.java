@@ -1,25 +1,18 @@
 package ber.com;
 
-import static org.mockito.ArgumentMatchers.any;
+import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-
-import static java.util.Collections.singletonList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;import org.springframework.http.HttpStatusCode;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import ber.com.api.composite.product.ProductAggregate;
-import ber.com.api.composite.product.ReviewSummary;
-import ber.com.api.composite.product.ServiceAddresses;
 import ber.com.api.core.product.Product;
 import ber.com.api.core.review.Review;
 import ber.com.api.exceptions.InvalidInputException;
@@ -28,7 +21,8 @@ import ber.com.microservice.composite.product.services.ProductCompositeIntegrati
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+				properties = {"eureka.client.enabled=false"})
 class ProductCompositeApplicationTests {
 
 	private static final int PRODUCT_ID_OK = 1;

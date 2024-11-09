@@ -15,7 +15,7 @@ java {
 
 ext {
 	mapstructVersion = "1.6.2"
-	springCloudVersion = "2022.0.1"
+	springCloudVersion = "2023.0.3"
 }
 
 jar {
@@ -30,6 +30,8 @@ repositories {
 dependencies {
 	implementation project(":api")
 	implementation project(":util")
+
+	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'	
 	
 	implementation 'org.springframework.cloud:spring-cloud-starter-stream-rabbit'
 	implementation 'org.springframework.cloud:spring-cloud-starter-stream-kafka'

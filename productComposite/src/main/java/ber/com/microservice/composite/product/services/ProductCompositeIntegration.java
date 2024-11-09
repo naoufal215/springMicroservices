@@ -43,8 +43,8 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 
 	private final ObjectMapper mapper;
 
-	private final String productServiceUrl;
-	private final String reviewServiceUrl;
+	private final String productServiceUrl = "http://productsService";
+	private final String reviewServiceUrl = "http://reviewsService";
 
 	private final WebClient client;
 
@@ -55,12 +55,11 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 	@Autowired
 	public ProductCompositeIntegration(
 
-			@Qualifier("publishEventScheduler") Scheduler publishEventScheduler, StreamBridge streamBridge,
-			WebClient.Builder webClient, RestTemplate restTemplate, ObjectMapper mapper,
-			@Value("${app.product-service.host}") String productServiceHost,
-			@Value("${app.product-service.port}") String productServicePort,
-			@Value("${app.review-service.host}") String reviewServiceHost,
-			@Value("${app.review-service.port}") String reviewServicePort
+			@Qualifier("publishEventScheduler") Scheduler publishEventScheduler,
+			StreamBridge streamBridge,
+			@Qualifier("loadBalancedWebClientBuilder") WebClient.Builder webClient,
+			RestTemplate restTemplate, 
+			ObjectMapper mapper
 
 	) {
 
@@ -68,11 +67,6 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 		this.bridge = streamBridge;
 		this.client = webClient.build();
 		this.mapper = mapper;
-
-		this.productServiceUrl = new StringBuilder().append("http://").append(productServiceHost).append(":")
-				.append(productServicePort).toString();
-		this.reviewServiceUrl = new StringBuilder().append("http://").append(reviewServiceHost).append(":")
-				.append(reviewServicePort).toString();
 	}
 
 	@Override

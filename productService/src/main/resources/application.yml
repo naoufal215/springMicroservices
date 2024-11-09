@@ -1,5 +1,5 @@
 spring:
-  application.name: productService
+  application.name: productsService
   data:
     mongodb:
       auto-index-creation: true
@@ -8,6 +8,18 @@ spring:
       database: product-db
 
 server.port: 7001
+
+app.eureka-server: localhost
+eureka:
+ client:
+  serviceUrl:
+   defaultZone: http://${app.eureka-server}:8761/eureka/
+  initialInstanceInfoReplicationIntervalSeconds: 5
+  registryFetchIntervalSeconds: 5
+ instance:
+  leaseRenewalIntervalInSeconds: 5
+  leaseExpirationDurationInSeconds: 5
+  virtual-host-name: ${spring.application.name}
 
 spring.cloud.function.definition: messageProcessor
 
@@ -72,7 +84,10 @@ spring:
 
 spring.rabbitmq.host: rabbitmq
 spring.cloud.stream.kafka.binder.brokers: kafka
+app.eureka-server: eureka
+
 server.port: 8080
+
 
 ---
 spring:
