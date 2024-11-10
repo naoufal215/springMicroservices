@@ -3,6 +3,7 @@ spring.application.name: productCompositeService
 server:
  port: 7000
  error.include-message: always  
+ forward-headers-strategy: framework
 
 app.eureka-server: localhost
 eureka:
@@ -21,12 +22,17 @@ logging:
     root: INFO
     ber.com: DEBUG	
     com.fasterxml.jackson: DEBUG	
+    io.swagger.v3: DEBUG
 
 springdoc:
   swagger-ui.path: /openapi/swagger-ui.html
   api-docs.path: /openapi/v3/api-docs
   packagesToScan: ber.com
-  PathsToMatch: /**
+  pathsToMatch: /**
+  packages-to-scan:
+   - "ber.com"
+  cache:
+    disabled: true
 
 api:
  common:
@@ -60,7 +66,7 @@ api:
      if the requested product id is found the method will return information regarding:
      1. product infomations
      2. Reviews
-     3. Service addresses \n (technical information regarding the addresses of the microservices)
+     3. Service addresses n (technical information regarding the addresses of the microservices)
 
      # Expected partial and error responses
 
@@ -117,6 +123,7 @@ spring.rabbitmq:
 
 management.endpoint.health.show-details: "ALWAYS"
 management.endpoints.web.exposure.include: "*" 
+
 ---
 spring:
   config:

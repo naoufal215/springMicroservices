@@ -167,8 +167,8 @@ fi
 
 waitForService curl http://$HOST:$PORT/actuator/health
 
-assertCurl 200 "curl -H "accept:application/json" $HOST:8761/eureka/apps -s"
-assertEqual 3 $(echo $RESPONSE | jq ".applications.application | length")
+assertCurl 200 "curl -H "accept:application/json" $HOST:8080/eureka/apps -s"
+assertEqual 4 $(echo $RESPONSE | jq ".applications.application | length")
 
 setupTestdata
 

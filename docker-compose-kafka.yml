@@ -57,8 +57,6 @@ services:
   environment:
    - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned,kafka
    - SPRING_APPLICATION_NAME=productCompositeService
-  ports:
-   - "8080:8080"
   depends_on:
    kafka:
     condition: service_healthy
@@ -125,5 +123,11 @@ services:
  eureka:
   build: springCloud/eurekaServer
   mem_limit: 256m
+
+ gateway:
+  build: springCloud/gateway
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+  mem_limit: 256m
   ports:
-     - "8761:8761"
+   - "8080:8080"

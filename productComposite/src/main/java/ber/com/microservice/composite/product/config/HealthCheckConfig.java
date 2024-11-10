@@ -25,7 +25,8 @@ public class HealthCheckConfig {
 	}
 
 
-
+	// Moved to the edge server
+/*
 	@Bean
 	ReactiveHealthContributor coreServices() {
 		
@@ -37,4 +38,5 @@ public class HealthCheckConfig {
 		return CompositeReactiveHealthContributor.fromMap(registry);
 		
 	}
+ */
 }
