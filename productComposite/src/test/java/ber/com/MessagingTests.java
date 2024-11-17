@@ -9,8 +9,6 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.HttpStatus.ACCEPTED;
 import static reactor.core.publisher.Mono.just;
 
 import java.util.ArrayList;
@@ -22,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.annotation.Import;
@@ -35,11 +34,14 @@ import ber.com.api.core.product.Product;
 import ber.com.api.core.review.Review;
 import ber.com.api.event.Event;
 
-@SpringBootTest(
-  webEnvironment = RANDOM_PORT,
-  properties = {"spring.main.allow-bean-definition-overriding=true",
-		  		 "eureka.client.enabled=false"
- })
+
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+classes= {TestSecurityConfig.class},
+properties = {
+    "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
+    "eureka.client.enabled=false",
+    "spring.main.allow-bean-definition-overriding=true"
+})
 @Import({TestChannelBinderConfiguration.class})
 class MessagingTests {
 

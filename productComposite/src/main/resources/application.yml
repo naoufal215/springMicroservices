@@ -1,5 +1,12 @@
 spring.application.name: productCompositeService
 
+app:
+ eureka-username: user
+ eureka-password: password
+ eureka-server: localhost
+ auth-server: localhost
+spring.security.oauth2.resourceserver.jwt.issuer-uri: http://${app.auth-server}:9999
+
 server:
  port: 7000
  error.include-message: always  
@@ -9,7 +16,7 @@ app.eureka-server: localhost
 eureka:
  client:
   serviceUrl:
-   defaultZone: http://${app.eureka-server}:8761/eureka/
+   defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
    initialInstanceInfoReplicationIntervalSeconds: 5
    registryFetchIntervalSeconds: 5
  instance:
@@ -33,6 +40,15 @@ springdoc:
    - "ber.com"
   cache:
     disabled: true
+  swagger-ui:
+   oauth2-redirect-url: /swagger-ui/oauth2-redirect.html
+   oauth:
+      client-id: writer
+      clientSecret: secret-writer
+      useBasicAuthenticationWithAccessCodeGrant: true
+  oAuthFlow:
+    authorizationUrl: https://localhost:8443/oauth2/authorize
+    tokenUrl: https://localhost:8443/oauth2/token    
 
 api:
  common:
@@ -137,6 +153,7 @@ server:
 spring.rabbitmq.host: rabbitmq
 spring.cloud.stream.kafka.binder.brokers: kafka
 app.eureka-server: eureka
+app.auth-server: auth-server
 ---
 spring:
   config:

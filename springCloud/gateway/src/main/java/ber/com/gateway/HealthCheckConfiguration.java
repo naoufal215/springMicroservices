@@ -42,7 +42,7 @@ public class HealthCheckConfiguration {
 			registry.put("product", ()->getHealth("http://productsService"));
 			registry.put("review", ()->getHealth("http://reviewsService"));
 			registry.put("product-composite", ()->getHealth("http://productCompositeService"));
-			
+			registry.put("authorization-server", ()->getHealth("http://auth-server"));			
 			return CompositeReactiveHealthContributor.fromMap(registry);
 		}
 		

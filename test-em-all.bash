@@ -3,7 +3,7 @@
 #
 #
 : ${HOST=localhost}
-: ${PORT=8080}
+: ${PORT=8443}
 : ${PROD_ID_REVS=1}
 : ${PROD_ID_NOT_FOUND=12}
 : ${PROD_ID_NO_REVS=213}
@@ -60,7 +60,7 @@ function testUrl(){
 
 function testCompositeCreated(){
 	
-	if ! assertCurl 200 "curl http://$HOST:$PORT/product-composite/$PROD_ID_REVS -s"
+	if ! assertCurl 200 "curl $AUTH -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS -s"
 	then 
 		echo -n "FAIL"
 		return 1
@@ -100,8 +100,8 @@ function recreateComposite() {
 	local productId=$1
 	local composite=$2
 	
-	assertCurl 202 "curl -X DELETE http://$HOST:$PORT/product-composite/${productId} -s"
-	asserCurl 202 $(curl -X POST -s http://$HOST:$PORT/product-composite -H "Content-Type: application/json" --data "$composite" -w "%{http_code}" )
+	assertCurl 200 "curl -X DELETE $AUTH -k https://$HOST:$PORT/product-composite/${productId} -s"
+	assertEqual 200 $(curl -X POST -k -s https://$HOST:$PORT/product-composite -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" --data "$composite" -w "%{http_code}" )
 }
 
 function waitForService(){
@@ -123,13 +123,6 @@ function waitForService(){
 	echo "Done, continues..."
 }
 
-function recreateComposite(){
-	local productId=$1
-	local composite=$2
-	
-	assertCurl 200 "curl -X DELETE http://$HOST:$PORT/product-composite/${productId} -s"
-	curl -X POST http://$HOST:$PORT/product-composite -H "Content-Type: application/json" --data "$composite"
-}
 
 function setupTestdata(){
 
@@ -165,10 +158,15 @@ then
 	docker compose up -d
 fi
 
-waitForService curl http://$HOST:$PORT/actuator/health
+waitForService curl -k https://$HOST:$PORT/actuator/health
 
-assertCurl 200 "curl -H "accept:application/json" $HOST:8080/eureka/apps -s"
-assertEqual 4 $(echo $RESPONSE | jq ".applications.application | length")
+ACCESS_TOKEN=$(curl -k https://writer:secret-writer@$HOST:$PORT/oauth2/token -d grant_type=client_credentials -d scope="product:read product:write" -s | jq .access_token -r )
+echo ACCESS_TOKEN=$ACCESS_TOKEN
+AUTH="-H \"Authorization: Bearer $ACCESS_TOKEN\""
+
+
+assertCurl 200 "curl -H "accept:application/json" -k https://user:password@$HOST:$PORT/eureka/api/apps -s"
+assertEqual 5 $(echo $RESPONSE | jq ".applications.application | length")
 
 setupTestdata
 
@@ -179,44 +177,52 @@ echo -e "\n"
 
 
 echo "Start of test: get product with reviews using productId"
-assertCurl 200 "curl http://$HOST:$PORT/product-composite/$PROD_ID_REVS -s" "response status"
+assertCurl 200 "curl $AUTH -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS -s" "response status"
 assertEqual $PROD_ID_REVS $(echo $RESPONSE | jq .productId) "product id"
 assertEqual 4 $(echo $RESPONSE | jq ".reviews | length") "reviews length"
 echo "End of test: get product with reviews using productId" 
 echo -e "\n"
 
 echo "Start of test: get product with using unkown productId"
-assertCurl 404 "curl http://$HOST:$PORT/product-composite/$PROD_ID_NOT_FOUND -s" "response status"
+assertCurl 404 "curl $AUTH -k https://$HOST:$PORT/product-composite/$PROD_ID_NOT_FOUND -s" "response status"
 assertEqual "No product found for productId: $PROD_ID_NOT_FOUND" "$(echo $RESPONSE | jq -r .message)" "response content"
 echo "End of test: get product with using unkown productId"
 echo -e "\n"
 
 echo "Start of test: get product without reviews using productId"
-assertCurl 200 "curl http://$HOST:$PORT/product-composite/$PROD_ID_NO_REVS -s" "response status"
+assertCurl 200 "curl $AUTH -k https://$HOST:$PORT/product-composite/$PROD_ID_NO_REVS -s" "response status"
 assertEqual $PROD_ID_NO_REVS $(echo $RESPONSE | jq .productId) "product id"
 assertEqual 0 $(echo $RESPONSE | jq ".reviews | length") "reviews length"
 echo "End of test: get product without reviews using productId"
 echo -e "\n"
 
 echo "Start of test: get product using negative productId"
-assertCurl 422 "curl http://$HOST:$PORT/product-composite/-1 -s" "response status"
+assertCurl 422 "curl $AUTH -k https://$HOST:$PORT/product-composite/-1 -s" "response status"
 assertEqual "\"Invalid productId: -1\"" "$(echo $RESPONSE | jq .message)" "response content"
 echo "End of test: get product using negative productId" 
 echo -e "\n"
 
 echo "Start of test: get product using string as productId"
-assertCurl 400 "curl http://$HOST:$PORT/product-composite/invalidProductId -s" "response status"
+assertCurl 400 "curl $AUTH -k https://$HOST:$PORT/product-composite/invalidProductId -s" "response status"
 assertEqual "Type mismatch." "$(echo $RESPONSE | jq -r .message)" "response content"
 echo "End of test: get product using string as productId" 
 
+echo "Start of test: reader client"
+READER_ACCESS_TOKEN=$(curl -k https://reader:secret-reader@$HOST:$PORT/oauth2/token -d grant_type=client_credentials -d scope="product:read" -s | jq .access_token -r)
+echo READER_ACCESS_TOKEN=$READER_ACCESS_TOKEN
+READER_AUTH="-H \"authorization: Bearer $READER_ACCESS_TOKEN\""
+assertCurl 200 "curl $READER_AUTH -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS -s"
+assertCurl 403 "curl -X DELETE $READER_AUTH -k https://$HOST:$PORT/product-composite/$PROD_ID_REVS -s"
+echo "End of test: readed client"
+
 echo "Swagger/OpenAPI tests"
-assertCurl 302 "curl -s http://$HOST:$PORT/openapi/swagger-ui.html"
-assertCurl 200 "curl -sL http://$HOST:$PORT/openapi/swagger-ui.html"
-assertCurl 200 "curl -s http://$HOST:$PORT/openapi/webjars/swagger-ui/index.html?configUrl=/V3/api-docs/swagger-config"
-assertCurl 200 "curl -s http://$HOST:$PORT/openapi/v3/api-docs"
+assertCurl 302 "curl -ks https://$HOST:$PORT/openapi/swagger-ui.html"
+assertCurl 200 "curl -ksL https://$HOST:$PORT/openapi/swagger-ui.html"
+assertCurl 200 "curl -ks https://$HOST:$PORT/openapi/webjars/swagger-ui/index.html?configUrl=/V3/api-docs/swagger-config"
+assertCurl 200 "curl -ks https://$HOST:$PORT/openapi/v3/api-docs"
 assertEqual "3.0.1" "$(echo $RESPONSE | jq -r .openapi)"
-assertEqual "http://$HOST:$PORT" "$(echo $RESPONSE | jq -r '.servers[0].url')"
-assertCurl 200 "curl -s http://$HOST:$PORT/openapi/v3/api-docs.yaml"
+assertEqual "https://$HOST:$PORT" "$(echo $RESPONSE | jq -r '.servers[0].url')"
+assertCurl 200 "curl -sk https://$HOST:$PORT/openapi/v3/api-docs.yaml"
 
 
 echo -e "\n"
