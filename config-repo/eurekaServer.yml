@@ -1,0 +1,19 @@
+server:
+  port: 8761
+
+app:
+  eureka-username: user
+  eureka-password: password
+
+eureka:
+ instance:
+  hostname: localhost
+ client:
+    register-with-eureka: false
+    fetchRegistry: false
+    serviceUrl:
+     defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+ server:
+  waitTimeInMsWhenSyncEmpty: 0
+  response-cache-update-interval-ms: 5000
+ 

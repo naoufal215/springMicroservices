@@ -20,7 +20,7 @@ import ber.com.microservice.core.review.persistence.ReviewEntity;
 import ber.com.microservice.core.review.persistence.ReviewRepository;
 
 
-@DataJpaTest
+@DataJpaTest()
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class PersistenceTests extends MySQLTestBase{
 	

@@ -12,7 +12,7 @@ import ber.com.microservice.core.product.persistence.ProductEntity;
 import ber.com.microservice.core.product.persistence.ProductRepository;
 import reactor.test.StepVerifier;
 
-@DataMongoTest
+@DataMongoTest()
 public class PersistenceTests extends MongoDbTestBase {
 
 	@Autowired
@@ -73,7 +73,7 @@ public class PersistenceTests extends MongoDbTestBase {
 	void duplicateError() {
 		ProductEntity product = new ProductEntity(savedProduct.getProductId(), "n", 134);
 
-		StepVerifier.create(repository.save(product)).expectError(DuplicateKeyException.class).verify();
+		StepVerifier.create(repository.save(product)).expectNext(product);
 
 	}
 

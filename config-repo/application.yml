@@ -1,0 +1,56 @@
+app:
+ eureka-username: user
+ eureka-password: '{cipher}AQCDw0kKT7Ur/+kcZc0jhpw8V1fYNOHfyu0dpch14gBSSGs1EwAZqOm0v/POEFnerc5gsBgNrBpSQIKhHwia8tzeQlEHJeNf4B6ef/sYv3YrXqJrYl3PQacM255LKYWns4FCkcqzr7wcD9Lmb3MXwz4zmgAoUVNwp5TC7JvJK3fe9jds2Nlj29G4V9CjUOs32Mvnv9xEV0VszyEhRGy8vO2/+AG4bva0DlXMhhzaIcbUGcqAYKVQHKupk9akwlR8xXHQ/xze5u6wVos+l8gtqUjMaiCNUFdPhdgTz0e0Aer+XCFYlhX0wl/uw8NZyRiOHi7gWpT8i5LOckfhIt3YCihKSho1X/hWYGR9PfFrjowK7/q/33EpKT0IsQgbmfXFL+A='
+ eureka-server: localhost
+ auth-server: localhost
+ 
+eureka:
+  client:
+   serviceUrl:
+    defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+   leaseRenewalIntervalInSeconds: 5
+   leaseExpirationDurationInSeconds: 5
+   virtual-host-name: ${spring.application.name}
+
+spring.rabbitmq:
+  host: 127.0.0.1
+  port: 5672
+  username: guest
+  password: '{cipher}AQAg7EwqNSnUTkB+uGxyKLQDtgeKU8IlrpdjnkbXlO5pGEWwd69Py8xQQyzryumk1vYnLFKNbRpMGM2Ts4wqSQrIi1QsfyhIe1d1gddemkTxZUfXhICbbERvEH6bI5TIxCZ0x1m3arc0b6RDKMErOfyVJvTtKNqN+o+/u5akJxko/H0UN6Zt1E8jxzENGGtPbLLoQ491n/xxocpqI9dnA489NFZUdd8AUEnDyH1qzqD2JAKYJGCccOG5aB4WRJTB8GbUDq0HBttWuLJ7S+w8woZXcOFbUEHMqRnxDRBaGUMpgVF//AO+5L3NIt71lxTlVb2LMPVI8c6wi09jy4pr4kJsGmNt5r8MLRDHkButvvfr57nvuWl+h9HrQTxqkdR9HWM='
+
+spring.cloud.stream.kafka.binder:
+ brokers: 127.0.0.1
+ defaultBrokerPort: 9092
+
+spring.cloud.stream:
+ defaultBinder: rabbit
+ 
+management:
+   endpoint:
+     health:
+       show-details: "ALWAYS"
+   endpoints:
+     jmx:
+       exposure:
+         exclude:
+         - "*"
+---
+spring.config.activate.on-profile: docker
+
+spring.rabbitmq.host: rabbitmq
+
+spring.cloud.stream.kafka.binder.brokers: kafka
+
+app:
+ eureka-server: eureka
+ auth-server: auth-server
+---
+spring.config.activate.on-profile: kafka
+
+management.health.rabbit.enabled: false
+spring.cloud.stream.defaultBinder: kafka
+spring.kafka.bootstrap-servers: kafka:9092
+spring.cloud.stream.kafka.binder.replication-factor: 1

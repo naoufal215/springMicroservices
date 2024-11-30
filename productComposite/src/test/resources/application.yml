@@ -1,0 +1,24 @@
+spring.cloud.config.enabled: false
+
+api:
+ common:
+  version:
+  title:
+  description:
+  termsOfService:
+  license:
+  licenseUrl:
+  externalDocDesc:
+  externalDocUrl:
+  contact:
+   name:
+   url:
+   email:
+
+
+spring.cloud.stream:
+ defaultBinder: rabbit
+ default.contentType: application/json
+ bindings:
+  products-out-0.destination: products
+  reviews-out-0.destination: reviews

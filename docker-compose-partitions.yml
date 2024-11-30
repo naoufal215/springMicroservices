@@ -130,3 +130,14 @@ services:
      interval: 5s
      timeout: 2s
      retries: 60
+
+ config-server:
+  build: springCloud/config-server
+  mem_limit: 256m
+  environment:
+  - SPRING_PROFILES_ACTOVE=docker,native
+  - ENCRYPT_LEY=${CONFIG_SERVER_ENCRYPT_KEY}
+  - SPRING_SECURITY_USER_NAME=${CONFIG_SERVER_USR}
+  - SPRING_SECURITY_USER_PASSWORD=${CONFIG_SERVER_PWD}
+  volumes:
+  - /Users/berouain/Documents/Projects/backend/microservices/config-repo:/config-repo

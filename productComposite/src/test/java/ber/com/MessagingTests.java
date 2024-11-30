@@ -14,6 +14,7 @@ import static reactor.core.publisher.Mono.just;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -40,10 +41,13 @@ classes= {TestSecurityConfig.class},
 properties = {
     "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
     "eureka.client.enabled=false",
-    "spring.main.allow-bean-definition-overriding=true"
+    "spring.main.allow-bean-definition-overriding=true",
+    
 })
 @Import({TestChannelBinderConfiguration.class})
 class MessagingTests {
+	
+
 
   private static final Logger LOG = LoggerFactory.getLogger(MessagingTests.class);
 

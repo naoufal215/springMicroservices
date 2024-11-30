@@ -1,0 +1,9 @@
+spring.cloud.config.enabled: false
+
+spring.cloud.stream.defaultBinder: rabbit
+server.error.include-message: always
+
+spring.jpa.show-sql: true
+spring.jpa.properties.hibernate.format: true
+spring.jpa.generate-ddl: true
+spring.jpa.hibernate.ddl-auto: create

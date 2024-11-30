@@ -1,0 +1,10 @@
+spring.cloud.config.enabled: false
+spring.cloud.stream.defaultBinder: rabbit
+server.error.include-message: always
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: .
+spring.cloud.config.uri: http://${CONFIG_SERVER_USR}:${CONFIG_SERVER_PWD}@config-server:8888

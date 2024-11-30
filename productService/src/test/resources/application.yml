@@ -1,0 +1,4 @@
+spring.cloud.config.enabled: false
+
+spring.cloud.stream.defaultBinder: rabbit
+server.error.include-message: always

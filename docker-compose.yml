@@ -5,9 +5,13 @@ services:
  product:
   build: productService
   mem_limit: 512m
+  env_file:
+    - .env
   environment:
    - SPRING_PROFILES_ACTIVE=docker
    - SPRING_APPLICATION_NAME=productsService
+   - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+   - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
   depends_on:
     mongodb:
      condition: service_healthy   
@@ -17,9 +21,13 @@ services:
  review:
   build: reviewsService
   mem_limit: 512m
+  env_file:
+    - .env
   environment:
    - SPRING_PROFILES_ACTIVE=docker
    - SPRING_APPLICATION_NAME=reviewsService
+   - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+   - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
   depends_on:
    mysql:
     condition: service_healthy
@@ -29,16 +37,20 @@ services:
  product-composite:
   build: productComposite
   mem_limit: 512m
+  env_file:
+    - .env
   environment:
    - SPRING_PROFILES_ACTIVE=docker
    - SPRING_APPLICATION_NAME=productCompositeService
+   - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+   - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
   depends_on:
    rabbitmq:
     condition: service_healthy
  
  mongodb:
   image: mongo:6.0.4
-  mem_limit: 256m
+  mem_limit: 500m
   ports:
    - "27017:27017"   
   command: mongod
@@ -66,7 +78,7 @@ services:
 
  rabbitmq:
   image: rabbitmq:3.11.8-management
-  mem_limit: 256m
+  mem_limit: 500m
   ports:
    - 5672:5672
    - 15672:15672
@@ -79,16 +91,26 @@ services:
  eureka:
   build: springCloud/eurekaServer
   mem_limit: 256m
-   
+  env_file:
+  - .env
+  environment:
+  - SPRING_PROFILES_ACTIVE=docker
+  - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+  - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
+     
  gateway:
   build: springCloud/gateway
   environment:
   - SPRING_PROFILES_ACTIVE=docker
   - SERVER_SSL_KEY_STORE=file:/keystore/edge-test.p12
   - SERVER_SSL_KEY_STORE_PASSWORD=password
+  - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+  - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
   volumes:
    - $PWD/keystore:/keystore
   mem_limit: 256m
+  env_file:
+    - .env
   ports:
    - "8443:8443"
   depends_on:
@@ -100,8 +122,23 @@ services:
    - SPRING_PROFILES_ACTIVE=docker
   build: springCloud/authorizationServer
   mem_limit: 256m
+  env_file:
+    - .env
   healthcheck:
    test: ["CMD","curl", "-fs", "http://localhost:9999/actuator/health"]
    interval: 5s
    timeout: 2s
-   retries: 60
+   retries: 10
+   
+ config-server:
+  build: springCloud/config-server
+  ports:
+   - "8888:8888"
+  mem_limit: 256m
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker,native
+   - ENCRYPT_KEY=${CONFIG_SERVER_ENCRYPT_KEY}
+   - SPRING_SECURITY_USER_NAME=${CONFIG_SERVER_USR}
+   - SPRING_SECURITY_USER_PASSWORD=${CONFIG_SERVER_PWD}
+  volumes:
+  - /Users/berouain/Documents/Projects/backend/microservices/config-repo:/config-repo
