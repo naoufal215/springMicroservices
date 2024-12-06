@@ -1,6 +1,8 @@
 package ber.com;
 
 import static java.util.Collections.singletonList;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -43,16 +45,16 @@ class ProductCompositeApplicationTests {
 	@BeforeEach
 	void setup() throws Exception {
 		
-		when(integration.getProduct(PRODUCT_ID_OK))
+		when(integration.getProduct(anyInt(),anyInt(),eq(PRODUCT_ID_OK)))
 			.thenReturn(Mono.just(new Product(PRODUCT_ID_OK, "name", 1,"mock-address")));
 		
 		when(integration.getReviews(PRODUCT_ID_OK))
 			.thenReturn(Flux.fromIterable(singletonList(new Review(PRODUCT_ID_OK,1, "author", "subject", "content", "mock-address"))));
 		
-		when(integration.getProduct(PRODUCT_ID_NOT_FOUND))
+		when(integration.getProduct(anyInt(),anyInt(),eq(PRODUCT_ID_NOT_FOUND)))
 			.thenThrow(new NotFoundException("NOT FOUND: "+ PRODUCT_ID_NOT_FOUND));
 		
-		when(integration.getProduct(PRODUCT_ID_INVALID))
+		when(integration.getProduct(anyInt(),anyInt(),eq(PRODUCT_ID_INVALID)))
 		.thenThrow(new InvalidInputException("INVALID: "+ PRODUCT_ID_INVALID));
 
 			

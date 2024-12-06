@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -60,7 +61,11 @@ public interface ProductCompositeService {
 			value= "/product-composite/{productId}",
 			produces= "application/json"
 			)
-	Mono<ProductAggregate> getProduct(@PathVariable("productId") int productId);
+	Mono<ProductAggregate> getProduct(
+			@RequestParam(name = "delay", required = false, defaultValue = "0") int delay,
+			@RequestParam(name="faultPercent", required=false, defaultValue = "0") int faultPercent,
+			@PathVariable("productId") int productId
+			);
 	
 	
 	@Operation(

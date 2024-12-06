@@ -1,13 +1,15 @@
 package ber.com.microservice.composite.product.services;
 
 import java.io.IOException;
+
+
+
 import java.util.logging.Level;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -30,10 +33,15 @@ import ber.com.api.event.Event.Type;
 import ber.com.api.exceptions.InvalidInputException;
 import ber.com.api.exceptions.NotFoundException;
 import ber.com.util.http.HttpErrorInfo;
+import ber.com.util.http.ServiceUtil;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
-
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
+import java.net.URI;
 
 @Component
 public class ProductCompositeIntegration implements ProductService, ReviewService {
@@ -51,6 +59,8 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 	private final StreamBridge bridge;
 
 	private final Scheduler publishEventScheduler;
+	
+	private final ServiceUtil serviceUtil;
 
 	@Autowired
 	public ProductCompositeIntegration(
@@ -59,7 +69,8 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 			StreamBridge streamBridge,
 			@Qualifier("loadBalancedWebClientBuilder") WebClient.Builder webClient,
 			RestTemplate restTemplate, 
-			ObjectMapper mapper
+			ObjectMapper mapper,
+			ServiceUtil serviceUtil
 
 	) {
 
@@ -67,17 +78,38 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 		this.bridge = streamBridge;
 		this.client = webClient.build();
 		this.mapper = mapper;
+		this.serviceUtil = serviceUtil;
 	}
 
 	@Override
-	public Mono<Product> getProduct(int productId) {
-
-		String url = productServiceUrl+"/product/"+ productId;
+	@Retry(name = "product")
+	@TimeLimiter(name = "product")
+	@CircuitBreaker(name="product", fallbackMethod = "getProductFallbackValue")
+	public Mono<Product> getProduct(int delay, int faultPercent,int productId) {
+		
+		URI url = UriComponentsBuilder.fromUriString(productServiceUrl
+			+"/product/{productId}?delay={delay}&faultPercent={faultPercent}"
+				).build(productId,delay,faultPercent);
 
 		LOG.debug("Will call getProduct API on URL: {}", url);
 
 		return client.get().uri(url).retrieve().bodyToMono(Product.class).log(LOG.getName(), Level.FINE)
 				.onErrorMap(WebClientResponseException.class, ex -> handleException(ex));
+	}
+	
+	private Mono<Product> getProductFallbackValue( 
+			int delay, 
+			int faultPercent,
+			int productId,
+			CallNotPermittedException ex){
+		LOG.warn("Creating a failt-fast fallback product from product={}, delay={}, faultPercent={}"
+				+ "and exception={}",productId,delay,faultPercent,ex);
+		if(productId == 12) {
+			String errMessage = "product ID= "+productId+" not found in fallback cache!";
+			LOG.warn(errMessage);
+			throw new NotFoundException(errMessage);
+		}
+		return Mono.just(new Product(productId, "fallback product"+productId, productId, serviceUtil.getServiceAddress()));
 	}
 
 	@Override

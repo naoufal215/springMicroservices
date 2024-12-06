@@ -10,7 +10,10 @@ spring:
    maxAttempts: 20
  config:
   import: optional:configserver:http://dev-user:dev-pwd@config-server:8888,optional:configserver:http://dev-user:dev-pwd@localhost:8888
-
+logging:
+  level:
+    root: INFO
+    ber.com: DEBUG
 ---
 spring:
   config:

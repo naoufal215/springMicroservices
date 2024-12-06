@@ -31,9 +31,9 @@ server:
 logging:
   level:
     root: INFO
-    ber.com: DEBUG	
-    com.fasterxml.jackson: DEBUG	
+    ber.com: DEBUG		
     io.swagger.v3: DEBUG
+    org.springframework.web.server.adapter.HttpWebHandlerAdapter: TRACE
 
     
 
@@ -113,7 +113,35 @@ spring.cloud.stream:
    producer:
     required-groups: auditGroup
 
+resilience4j.timelimiter:
+  instances:
+   product:
+    timeoutDuration: 2s
 
+resilience4j.retry:
+  instances: 
+   product:
+    maxAttempts: 3
+    waitDuration: 1000
+    retryExceptions: 
+     - org.springframework.web.reactive.function.client.WebClientResponseException$InternalServerError
+
+management.health.circuitbreakers.enabled: true
+
+resilience4j.circuitbreaker:
+ instances:
+  product:
+   allowHealthIndicatorToFail: false
+   registerHealthIndicator: true
+   slidingWindowType: COUNT_BASED
+   slidingWindowSize: 5
+   failureRateThreshold: 50
+   waitDurationInOpenState: 10000
+   permittedNumberOfcallsInHalfOpenState: 3
+   automaticTransitionFromOpenToHalfOpenEnabled: true
+   ignoreExceptions:
+    - ber.com.api.exceptions.InvalidInputException
+    - ber.com.api.exceptions.NotFoundException
 
 ---
 spring:

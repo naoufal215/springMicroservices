@@ -2,6 +2,7 @@ package ber.com.microservice.core.product.service;
 
 import ber.com.api.core.product.Product;
 
+
 import ber.com.api.core.product.ProductService;
 import ber.com.api.exceptions.InvalidInputException;
 import ber.com.api.exceptions.NotFoundException;
@@ -19,6 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.dao.DuplicateKeyException;
 
+import java.time.Duration;
+import java.util.Random;
+
 
 @RestController
 public class ProductServiceImpl implements ProductService {
@@ -31,6 +35,10 @@ public class ProductServiceImpl implements ProductService {
 	
 	private final ProductRepository repository;
 	
+	private final Random random = new Random();
+	
+	
+	
 	@Autowired
 	public ProductServiceImpl(ServiceUtil serviceUtil, ProductMapper mapper, ProductRepository repository) {
 		this.serviceUtil = serviceUtil;
@@ -38,7 +46,8 @@ public class ProductServiceImpl implements ProductService {
 		this.repository = repository;
 	}
 	
-	public Mono<Product> getProduct(int productId) {
+	@Override
+	public Mono<Product> getProduct(int delay, int faultPercent,int productId ) {
 		LOG.debug("GetProduct: product return the found product for productId={}", productId);
 		
 		if(productId <1) {
@@ -46,6 +55,8 @@ public class ProductServiceImpl implements ProductService {
 		}
 		
 		return repository.findByProductId(productId)
+				.map(e -> throwErrorIfBadLuck(e, faultPercent))
+				.delayElement(Duration.ofSeconds(delay))
 				.switchIfEmpty(Mono.error(new NotFoundException("No product found for productId: "+productId)))
 				.log(LOG.getName(),Level.FINE)
 				.map(e->mapper.entityToApi(e))
@@ -53,10 +64,7 @@ public class ProductServiceImpl implements ProductService {
 		
 	}
 	
-	private Product setServiceAddress(Product product) {
-		product.setServiceAddress(serviceUtil.getServiceAddress());
-		return product;
-	}
+	
 
 	@Override
 	public Mono<Product> create(Product product) {
@@ -84,6 +92,34 @@ public class ProductServiceImpl implements ProductService {
 				.map(e->repository.delete(e))
 				.flatMap(e->e);
 		
+	}
+	
+	
+	private Product setServiceAddress(Product product) {
+		product.setServiceAddress(serviceUtil.getServiceAddress());
+		return product;
+	}
+	
+	private ProductEntity throwErrorIfBadLuck(ProductEntity entity, int faultPercent) {
+		if(faultPercent == 0) {
+			return entity;
+		}
+		int randomThreshold = getRandomNumber(1, 100);
+		
+		if(faultPercent < randomThreshold) {
+			LOG.debug("We got lucky, no error occurred, {}  < {}", faultPercent, randomThreshold);
+		}else {
+			LOG.info("Bad luck, an error occurred, {} >= {}", faultPercent, randomThreshold);
+			throw new RuntimeException("Something wen wrong...");
+		}
+		return entity;
+	}
+	
+	private int getRandomNumber(int min, int max) {
+		if(max < min) {
+			throw new IllegalArgumentException("Max must be greater then min");
+		}
+		return random.nextInt((max-min)+1)+min;
 	}
 
 }
